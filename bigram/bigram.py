@@ -12,7 +12,8 @@ from pydantic import BaseModel
 from torch import Tensor
 from torch.nn import functional as F
 
-from bigram.configs.bigram_config import BATCH_SIZE, BLOCK_SIZE, MAX_ITERS, EVAL_INTERVAL, LEARNING_RATE, DEVICE, EVAL_ITERS
+from bigram.configs.bigram_config import BATCH_SIZE, BLOCK_SIZE, MAX_ITERS, EVAL_INTERVAL, LEARNING_RATE, DEVICE, \
+    EVAL_ITERS, EMBEDDING_SIZE
 
 from bigram.utils import BiGram
 
@@ -24,6 +25,7 @@ eval_interval = EVAL_INTERVAL
 learning_rate = LEARNING_RATE
 device = DEVICE if torch.cuda.is_available() else "cpu"
 eval_iters = EVAL_ITERS
+n_embd = EMBEDDING_SIZE
 # --------------
 
 torch.manual_seed((1337))
@@ -45,13 +47,16 @@ print("################################")
 class BigramLanguageModel(nn.Module):
     def __init__(self, vocab_size):
         super().__init__()
-        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
+        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
+        self.lm_head = nn.Linear(n_embd,vocab_size)
 
     def forward(self, idx, targets=None):
         """
         return logits, loss
         """
-        logits = self.token_embedding_table(idx)
+        tok_emb = self.token_embedding_table(idx)
+        logits = self.lm_head(tok_emb)
+
         if targets is None:
             loss = None
         else:
@@ -69,8 +74,8 @@ class BigramLanguageModel(nn.Module):
             idx_next = torch.multinomial(probs,num_samples=1)
             idx = torch.cat((idx,idx_next),dim=1)
         return idx
-def main():
-    model = BigramLanguageModel(vocab_size)
+def main(input_text = None):
+    model = BigramLanguageModel(vocab_size).eval()
     m = model.to(device)
     sample = BiGram(
         text=text,
@@ -79,16 +84,36 @@ def main():
         device=device
     )
     sample.print_params()
+    optimizer = torch.optim.AdamW(m.parameters(), lr=1e-1)
+
+    generated_text = sample.decode(m.generate(idx = torch.zeros((1,1),dtype=torch.long).to(device), max_new_tokens=300)[0].tolist())
+
+    print(generated_text)
+
+    for steps in range(100):  # increase number of steps for good results...
+
+        xb, yb = sample.get_batch('train')
+
+        # evaluate the loss
+        logits, loss = m(xb, yb)
+        optimizer.zero_grad(set_to_none=True)
+        loss.backward()
+        optimizer.step()
+
+    print(f"loss = {loss.item()}")
+
     # xb, yb = sample.get_batch(
     #     split='train'
     # )
     # logits,loss = m(xb,yb)
 
     generated_text = sample.decode(m.generate(idx = torch.zeros((1,1),dtype=torch.long).to(device), max_new_tokens=300)[0].tolist())
+    print('================================================================')
+    print(generated_text)
 
-    for ch in generated_text:
-        print(ch,end="",flush=True)
-        time.sleep(0.05)
+    return generated_text
+
+
 
 if __name__ == '__main__':
     main()
