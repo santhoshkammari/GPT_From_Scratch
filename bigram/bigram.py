@@ -90,7 +90,7 @@ def main(input_text = None):
 
     print(generated_text)
 
-    for steps in range(100):  # increase number of steps for good results...
+    for steps in range(50):  # increase number of steps for good results...
 
         xb, yb = sample.get_batch('train')
 
