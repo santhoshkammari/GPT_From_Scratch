@@ -1,10 +1,8 @@
-import time
-
 import uvicorn
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from bigram.bigram import main
+from trash_code.bigram.bigram import main
 
 app = FastAPI()
 class Params(BaseModel):

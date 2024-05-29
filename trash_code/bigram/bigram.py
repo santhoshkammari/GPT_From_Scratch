@@ -1,21 +1,11 @@
-import time
-
 import torch
 import torch.nn as nn
-
-from typing import Tuple
-
-import torch
-import torch.nn as nn
-import uvicorn
-from pydantic import BaseModel
-from torch import Tensor
 from torch.nn import functional as F
 
-from bigram.configs.bigram_config import BATCH_SIZE, BLOCK_SIZE, MAX_ITERS, EVAL_INTERVAL, LEARNING_RATE, DEVICE, \
+from trash_code.bigram.configs.bigram_config import BATCH_SIZE, BLOCK_SIZE, MAX_ITERS, EVAL_INTERVAL, LEARNING_RATE, DEVICE, \
     EVAL_ITERS, EMBEDDING_SIZE
 
-from bigram.utils import BiGram
+from trash_code.bigram.utils import BiGram
 
 # hyperparameters
 batch_size = BATCH_SIZE
